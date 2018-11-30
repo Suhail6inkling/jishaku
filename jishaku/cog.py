@@ -405,7 +405,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
                 else:
                     paginator.add_line(f"{load_icon} `{extension}`", empty=True)
             except Exception as exc:
-                if type(e).__name__ == 'ClientException' and str(e) == 'extension does not have a setup function':
+                if type(exc).__name__ == 'ClientException' and str(exc) == 'extension does not have a setup function':
                     mod = imp.import_module(extension)
                     imp.reload(mod)
                     paginator.add_line(f"{load_icon} `{extension}`", empty=True)
