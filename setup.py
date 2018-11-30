@@ -58,9 +58,6 @@ if version.endswith(('a', 'b', 'rc')):
         pass
 
 
-with open('README.rst') as f:
-    readme = f.read()
-
 
 setup(name='jishaku',
       author='Gorialis',
@@ -70,7 +67,6 @@ setup(name='jishaku',
       packages=['jishaku', 'jishaku.repl'],
       license='MIT',
       description='A discord.py extension including useful tools for bot development and debugging.',
-      long_description=readme,
       include_package_data=True,
       install_requires=requirements,
       python_requires='>=3.6.0',
