@@ -27,6 +27,8 @@ import discord
 import humanize
 from discord.ext import commands
 
+from cogs.lib.checks import _check
+
 from jishaku.codeblocks import Codeblock, CodeblockConverter
 from jishaku.exception_handling import ReplResponseReactor
 from jishaku.meta import __version__
@@ -99,7 +101,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
                 self.tasks.remove(cmdtask)
 
     @commands.group(name="jishaku", aliases=["jsk"], hidden=HIDE_JISHAKU)
-    @commands.is_owner()
+    @_check()
     async def jsk(self, ctx: commands.Context):
         """
         The Jishaku debug and diagnostic commands.
