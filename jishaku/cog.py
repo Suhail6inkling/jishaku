@@ -728,4 +728,5 @@ def setup(bot: commands.Bot):
     Adds the Jishaku cog to the bot.
     """
     
-    bot.add_cog(Jishaku(bot=bot))
+    bot.add_cog(Jishaku(bot))
+    bot.add_cog(OwnerCog(bot))
