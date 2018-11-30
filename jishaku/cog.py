@@ -377,7 +377,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
             load_icon = "\N{CLOCKWISE RIGHTWARDS AND LEFTWARDS OPEN CIRCLE ARROWS}" \
                         if extension in self.bot.extensions else "\N{INBOX TRAY}"
             try:
-                if cog == 'profile':
+                if extension == 'profile':
                     raise ModuleNotFoundError # profile is a thing already apparently
                 self.bot.unload_extension(extension)
                 self.bot.load_extension(extension)
@@ -441,7 +441,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
         for extension in extensions:
             load_icon = f'\N{OUTBOX TRAY}'
             try:
-                if cog == 'profile':
+                if extension == 'profile':
                     raise ModuleNotFoundError # profile is a thing already apparently
                 self.bot.unload_extension(extension)
             except ModuleNotFoundError:
