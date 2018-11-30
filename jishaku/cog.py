@@ -212,7 +212,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
         await interface.send_to(ctx)
 
     @jsk.command(name="cancel")
-    async def jsk_cancel(self, ctx: commands.Context, *, index: int):
+    async def jsk_cancel(self, ctx: commands.Context, *, index: int = -1):
         """
         Cancels a task with the given index.
 
@@ -377,6 +377,45 @@ class Jishaku:  # pylint: disable=too-many-public-methods
             load_icon = "\N{CLOCKWISE RIGHTWARDS AND LEFTWARDS OPEN CIRCLE ARROWS}" \
                         if extension in self.bot.extensions else "\N{INBOX TRAY}"
             try:
+                if cog == 'profile':
+                    raise ModuleNotFoundError # profile is a thing already apparently
+                self.bot.unload_extension(extension)
+                self.bot.load_extension(extension)
+            except ModuleNotFoundError:
+                cog1 = 'cogs.' + extension
+                try:
+                    self.bot.unload_extension(cog1)
+                    self.bot.load_extension(cog1)
+                except ModuleNotFoundError:
+                    cog = 'cogs.lib.'+extension
+                    try:
+                        mod = imp.import_module(cog)
+                        imp.reload(mod)
+                        embed = Embed(colour=Colour(0x00ff00))
+                    except Exception as e:
+                        traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
+
+                        paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
+                    else:
+                        paginator.add_line(f"{load_icon} `{extension}`", empty=True)
+                except Exception as e:
+                    traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
+
+                    paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
+                else:
+                    paginator.add_line(f"{load_icon} `{extension}`", empty=True)
+            except Exception as e:
+                if type(e).__name__ == 'ClientException' and str(e) == 'extension does not have a setup function':
+                    mod = imp.import_module(extension)
+                    imp.reload(mod)
+                    paginator.add_line(f"{load_icon} `{extension}`", empty=True)
+                else:
+                    traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
+
+                    paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
+            else:
+                paginator.add_line(f"{load_icon} `{extension}`", empty=True)
+            try:
                 self.bot.unload_extension(extension)
                 self.bot.load_extension(extension)
             except Exception as exc:  # pylint: disable=broad-except
@@ -400,14 +439,47 @@ class Jishaku:  # pylint: disable=too-many-public-methods
         paginator = commands.Paginator(prefix='', suffix='')
 
         for extension in extensions:
+            load_icon = f'\N{OUTBOX TRAY}'
             try:
+                if cog == 'profile':
+                    raise ModuleNotFoundError # profile is a thing already apparently
                 self.bot.unload_extension(extension)
-            except Exception as exc:  # pylint: disable=broad-except
-                traceback_data = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
+            except ModuleNotFoundError:
+                cog1 = 'cogs.' + extension
+                try:
+                    self.bot.unload_extension(cog1)
+                except ModuleNotFoundError:
+                    cog = 'cogs.lib.'+extension
+                    try:
+                        mod = imp.import_module(cog)
+                        imp.reload(mod)
+                        embed = Embed(colour=Colour(0x00ff00))
+                    except Exception as e:
+                        traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
+
+                        paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
+                    else:
+                        paginator.add_line(f"{load_icon} `{extension}`", empty=True)
+                except Exception as e:
+                    traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
+
+                    paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
+                else:
+                    paginator.add_line(f"{load_icon} `{extension}`", empty=True)
+            except Exception as e:
+                traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
 
                 paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
             else:
-                paginator.add_line(f"\N{OUTBOX TRAY} `{extension}`", empty=True)
+                paginator.add_line(f"{load_icon} `{extension}`", empty=True)
+            try:
+                self.bot.unload_extension(extension)
+            except Exception as exc:  # pylint: disable=broad-except
+                traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
+
+                paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
+            else:
+                paginator.add_line(f"{load_icon} `{extension}`", empty=True)
 
         for page in paginator.pages:
             await ctx.send(page)
@@ -635,11 +707,25 @@ class Jishaku:  # pylint: disable=too-many-public-methods
 
         await ctx.send("Logging out now..")
         await ctx.bot.logout()
-
-
+class OwnerCog:
+    def __init__(self, bot):
+        self.bot = bot
+        self.jsk = self.bot.get_command('jsk')
+    @commands.command()
+    async def run(self, ctx, *, argument: CodeblockConverter):
+        await ctx.invoke(self.jsk.get_command('sh'), argument = argument)
+    @commands.command()
+    async def py(self, ctx, *, argument: CodeblockConverter):
+        await ctx.invoke(self.jsk.get_command('py'), argument = argument)
+    @commands.command()
+    async def unload(self, ctx: commands.Context, *extensions):
+        await ctx.invoke(self.jsk.get_command('unload'), extensions = extensions)
+    @commands.command(aliases=["reload"])
+    async def load(self, ctx: commands.Context, *extensions):
+        await ctx.invoke(self.jsk.get_command('load'), extensions = extensions)
 def setup(bot: commands.Bot):
     """
     Adds the Jishaku cog to the bot.
     """
-
+    
     bot.add_cog(Jishaku(bot=bot))
