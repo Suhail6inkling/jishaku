@@ -707,26 +707,21 @@ class Jishaku:  # pylint: disable=too-many-public-methods
 
         await ctx.send("Logging out now..")
         await ctx.bot.logout()
-class OwnerCog:
-    def __init__(self, bot):
-        self.bot = bot
-        self.jsk = self.bot.get_command('jsk')
     @commands.command()
     async def run(self, ctx, *, argument: CodeblockConverter):
-        await ctx.invoke(self.jsk.get_command('sh'), argument = argument)
+        await ctx.invoke(self.jsk_shell, argument = argument)
     @commands.command()
     async def py(self, ctx, *, argument: CodeblockConverter):
-        await ctx.invoke(self.jsk.get_command('py'), argument = argument)
+        await ctx.invoke(self.jsk_python, argument = argument)
     @commands.command()
     async def unload(self, ctx: commands.Context, *extensions):
-        await ctx.invoke(self.jsk.get_command('unload'), extensions = extensions)
+        await ctx.invoke(self.jsk_unload, extensions = extensions)
     @commands.command(aliases=["reload"])
     async def load(self, ctx: commands.Context, *extensions):
-        await ctx.invoke(self.jsk.get_command('load'), extensions = extensions)
+        await ctx.invoke(self.jsk_load, extensions = extensions)
 def setup(bot: commands.Bot):
     """
     Adds the Jishaku cog to the bot.
     """
     
     bot.add_cog(Jishaku(bot))
-    bot.add_cog(OwnerCog(bot))
