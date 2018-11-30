@@ -392,19 +392,19 @@ class Jishaku:  # pylint: disable=too-many-public-methods
                         mod = imp.import_module(cog)
                         imp.reload(mod)
                         embed = Embed(colour=Colour(0x00ff00))
-                    except Exception as e:
+                    except Exception as exc:
                         traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
 
                         paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
                     else:
                         paginator.add_line(f"{load_icon} `{extension}`", empty=True)
-                except Exception as e:
+                except Exception as exc:
                     traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
 
                     paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
                 else:
                     paginator.add_line(f"{load_icon} `{extension}`", empty=True)
-            except Exception as e:
+            except Exception as exc:
                 if type(e).__name__ == 'ClientException' and str(e) == 'extension does not have a setup function':
                     mod = imp.import_module(extension)
                     imp.reload(mod)
@@ -454,19 +454,19 @@ class Jishaku:  # pylint: disable=too-many-public-methods
                         mod = imp.import_module(cog)
                         imp.reload(mod)
                         embed = Embed(colour=Colour(0x00ff00))
-                    except Exception as e:
+                    except Exception as exc:
                         traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
 
                         paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
                     else:
                         paginator.add_line(f"{load_icon} `{extension}`", empty=True)
-                except Exception as e:
+                except Exception as exc:
                     traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
 
                     paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
                 else:
                     paginator.add_line(f"{load_icon} `{extension}`", empty=True)
-            except Exception as e:
+            except Exception as exc:
                 traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
 
                 paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
