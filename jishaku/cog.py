@@ -707,6 +707,11 @@ class Jishaku:  # pylint: disable=too-many-public-methods
 
         await ctx.send("Logging out now..")
         await ctx.bot.logout()
+    @jsk.command()
+    async def update(self, ctx, reload: bool = True):
+        await ctx.invoke(self.jsk_shell, argument = Codeblock(None, 'python3 -m pip install -U git+https://github.com/Starwort/jishaku@master#egg=jishaku'))
+        if reload: await ctx.invoke(self.jsk_load, 'jishaku')
+    @commands.command()
     @commands.command()
     @_check()
     async def run(self, ctx, *, argument: CodeblockConverter):
