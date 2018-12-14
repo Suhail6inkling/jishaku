@@ -26,8 +26,10 @@ import typing
 import discord
 import humanize
 from discord.ext import commands
-
-from cogs.lib.checks import _check
+try:
+    from cogs.lib.checks import _check
+except:
+    from lib.checks import _check
 
 from jishaku.codeblocks import Codeblock, CodeblockConverter
 from jishaku.exception_handling import ReplResponseReactor
