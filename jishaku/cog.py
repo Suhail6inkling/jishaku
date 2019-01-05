@@ -393,7 +393,6 @@ class Jishaku:  # pylint: disable=too-many-public-methods
                     try:
                         mod = imp.import_module(cog)
                         imp.reload(mod)
-                        embed = Embed(colour=Colour(0x00ff00))
                     except Exception as exc:
                         traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
 
@@ -455,7 +454,6 @@ class Jishaku:  # pylint: disable=too-many-public-methods
                     try:
                         mod = imp.import_module(cog)
                         imp.reload(mod)
-                        embed = Embed(colour=Colour(0x00ff00))
                     except Exception as exc:
                         traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
 
