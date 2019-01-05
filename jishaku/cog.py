@@ -416,15 +416,6 @@ class Jishaku:  # pylint: disable=too-many-public-methods
                     paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
             else:
                 paginator.add_line(f"{load_icon} `{extension}`", empty=True)
-            try:
-                self.bot.unload_extension(extension)
-                self.bot.load_extension(extension)
-            except Exception as exc:  # pylint: disable=broad-except
-                traceback_data = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
-
-                paginator.add_line(f"\N{WARNING SIGN} `{extension}`\n```py\n{traceback_data}\n```", empty=True)
-            else:
-                paginator.add_line(f"{load_icon} `{extension}`", empty=True)
 
         for page in paginator.pages:
             await ctx.send(page)
