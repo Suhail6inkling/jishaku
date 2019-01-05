@@ -30,7 +30,7 @@ try:
     from cogs.lib.checks import _check
 except:
     from lib.checks import _check
-
+import importlib as imp
 from jishaku.codeblocks import Codeblock, CodeblockConverter
 from jishaku.exception_handling import ReplResponseReactor
 from jishaku.meta import __version__
