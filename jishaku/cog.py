@@ -68,6 +68,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
         self.start_time = datetime.datetime.now()
         self.tasks = collections.deque()
         self.task_count: int = 0
+        self.aliases = Aliases(bot, self)
 
     @property
     def scope(self):
@@ -675,10 +676,70 @@ class Jishaku:  # pylint: disable=too-many-public-methods
         await ctx.send("Logging out now..")
         await ctx.bot.logout()
 
+class Aliases():
+
+    def __init__(self, bot, jsk):
+        self.bot = bot
+        self.jsk = jsk
+    
+    @commands.command()
+    @commands.is_owner()
+    async def py(self, ctx, *, argument: CodeblockConverter):
+        await ctx.invoke(self.jsk.jsk_python, argument=argument)
+    
+    @commands.command()
+    @commands.is_owner()
+    async def sh(self, ctx, *, argument: CodeblockConverter):
+        await ctx.invoke(self.jsk.jsk_shell, argument=argument)
+    
+    @commands.command()
+    @commands.is_owner()
+    async def restart(self, ctx, service="selfbot"):
+        service = service.lower()
+        if service=="all": 
+            for x in ("milan","satan","murch","selfbot"):
+                message = f"service {x} restart"
+                arg = Codeblock(None, message)
+                await ctx.invoke(self.jsk.jsk_shell, argument=arg)
+            return
+        message = f"service {service} restart"
+        arg = Codeblock(None, message)
+        await ctx.invoke(self.jsk.jsk_shell, argument=arg)
+    
+    @commands.command()
+    @commands.is_owner()
+    async def stop(self, ctx, service="selfbot"):
+        service = service.lower()
+        if service=="all": 
+            for x in ("milan","satan","murch","selfbot"):
+                message = f"service {x} stop"
+                arg = Codeblock(None, message)
+                await ctx.invoke(self.jsk.jsk_shell, argument=arg)
+            return
+        message = f"service {service} stop"
+        arg = Codeblock(None, message)
+        await ctx.invoke(self.jsk.jsk_shell, argument=arg)
+
+    @commands.command()
+    @commands.is_owner()
+    async def start(self, ctx, service="selfbot"):
+        service = service.lower()
+        if service=="all": 
+            for x in ("milan","satan","murch","selfbot"):
+                message = f"service {x} start"
+                arg = Codeblock(None, message)
+                await ctx.invoke(self.jsk.jsk_shell, argument=arg)
+            return
+        message = f"service {service} start"
+        arg = Codeblock(None, message)
+        await ctx.invoke(self.jsk.jsk_shell, argument=arg)
+
+
 
 def setup(bot: commands.Bot):
     """
     Adds the Jishaku cog to the bot.
     """
-
-    bot.add_cog(Jishaku(bot=bot))
+    cog = Jishaku(bot=bot)
+    bot.add_cog(cog)
+    bot.add_cog(cog.aliases)
