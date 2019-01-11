@@ -52,7 +52,7 @@ class Aliases():
     @commands.command()
     @commands.is_owner()
     async def unload(self, ctx, *extensions):
-        extensions = f["cogs.{e}" for e in extensions if not e.startswith("cogs")]
+        extensions = [f"cogs.{e}" for e in extensions if not e.startswith("cogs")]
         await ctx.invoke(self.jsk.jsk_unload, *extensions)
         
     @commands.command()
