@@ -42,7 +42,7 @@ class Aliases():
         if extensions:
             await ctx.invoke(self.load, *extensions)
     
-    @commands.command()
+    @commands.command(aliases=["reload"])
     @commands.is_owner()
     async def load(self, ctx, *extensions):
         extensions = [f"cogs.{e}" for e in extensions if not e.startswith("cogs")]
@@ -55,7 +55,6 @@ class Aliases():
         extensions = [f"cogs.{e}" for e in extensions if not e.startswith("cogs")]
         await ctx.invoke(self.jsk.jsk_unload, *extensions)
         
-    @commands.command()
 
 
     # @commands.command()
