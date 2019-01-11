@@ -27,6 +27,7 @@ import discord
 import humanize
 from discord.ext import commands
 
+from jishaku.aliases import Aliases
 from jishaku.codeblocks import Codeblock, CodeblockConverter
 from jishaku.exception_handling import ReplResponseReactor
 from jishaku.meta import __version__
@@ -676,63 +677,17 @@ class Jishaku:  # pylint: disable=too-many-public-methods
         await ctx.send("Logging out now..")
         await ctx.bot.logout()
 
-class Aliases():
+    @jsk.command(name="update")
+    async def jsk_update(self, ctx: commands.Context, reload: bool = True):
+        """
+        Updates jishaku to the most recent version
+        """
 
-    def __init__(self, bot, jsk):
-        self.bot = bot
-        self.jsk = jsk
-    
-    @commands.command()
-    @commands.is_owner()
-    async def py(self, ctx, *, argument: CodeblockConverter):
-        await ctx.invoke(self.jsk.jsk_python, argument=argument)
-    
-    @commands.command()
-    @commands.is_owner()
-    async def sh(self, ctx, *, argument: CodeblockConverter):
-        await ctx.invoke(self.jsk.jsk_shell, argument=argument)
-    
-    @commands.command()
-    @commands.is_owner()
-    async def restart(self, ctx, service="selfbot"):
-        service = service.lower()
-        if service=="all": 
-            for x in ("milan","satan","murch","selfbot"):
-                message = f"service {x} restart"
-                arg = Codeblock(None, message)
-                await ctx.invoke(self.jsk.jsk_shell, argument=arg)
-            return
-        message = f"service {service} restart"
-        arg = Codeblock(None, message)
-        await ctx.invoke(self.jsk.jsk_shell, argument=arg)
-    
-    @commands.command()
-    @commands.is_owner()
-    async def stop(self, ctx, service="selfbot"):
-        service = service.lower()
-        if service=="all": 
-            for x in ("milan","satan","murch","selfbot"):
-                message = f"service {x} stop"
-                arg = Codeblock(None, message)
-                await ctx.invoke(self.jsk.jsk_shell, argument=arg)
-            return
-        message = f"service {service} stop"
-        arg = Codeblock(None, message)
-        await ctx.invoke(self.jsk.jsk_shell, argument=arg)
+        arg = Codeblock(None, 'python3 -m pip install -U git+https://github.com/Suhail6inkling/jishaku@master#egg=jishaku')
+        await ctx.invoke(self.jsk_shell, argument = arg)
+        if reload:
+            await ctx.invoke(self.jsk_load, extensions=["jishaku"])
 
-    @commands.command()
-    @commands.is_owner()
-    async def start(self, ctx, service="selfbot"):
-        service = service.lower()
-        if service=="all": 
-            for x in ("milan","satan","murch","selfbot"):
-                message = f"service {x} start"
-                arg = Codeblock(None, message)
-                await ctx.invoke(self.jsk.jsk_shell, argument=arg)
-            return
-        message = f"service {service} start"
-        arg = Codeblock(None, message)
-        await ctx.invoke(self.jsk.jsk_shell, argument=arg)
 
 
 
