@@ -678,15 +678,15 @@ class Jishaku:  # pylint: disable=too-many-public-methods
         await ctx.bot.logout()
 
     @jsk.command(name="update")
-    async def jsk_update(self, ctx: commands.Context, reload: bool = True):
+    async def jsk_update(self, ctx: commands.Context, reload: bool = False):
         """
         Updates jishaku to the most recent version
         """
 
-        arg = Codeblock(None, 'python3 -m pip install -U git+https://github.com/Suhail6inkling/jishaku@master#egg=jishaku')
+        message = 'python3 -m pip install -U git+https://github.com/Suhail6inkling/jishaku@master#egg=jishaku'
+        if reload: message += " && reboot"
+        arg = Codeblock(None, message)
         await ctx.invoke(self.jsk_shell, argument = arg)
-        if reload:
-            await ctx.invoke(self.jsk_load, extensions=["jishaku"])
 
 
 
