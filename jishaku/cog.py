@@ -51,7 +51,7 @@ HIDE_JISHAKU = os.getenv("JISHAKU_HIDE", "").lower() in ("true", "t", "yes", "y"
 CommandTask = collections.namedtuple("CommandTask", "index ctx task")
 
 
-class Jishaku:  # pylint: disable=too-many-public-methods
+class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
     """
     The cog that includes Jishaku's Discord-facing default functionality.
     """
