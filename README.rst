@@ -28,6 +28,9 @@ jishaku is a debugging and experimenting cog for Discord bots using ``discord.py
 It is locked to Python 3.6+ and requirements will shift as new ``discord.py`` and Python versions release.
 This repo primarily exists for the purpose of example and usage in other bot projects.
 
+Documentation is available on `readthedocs <https://jishaku.readthedocs.io/en/latest/>`__, although incomplete.
+If in doubt, all commands have docstrings visible from the help command.
+
 Installing
 -----------
 
@@ -52,9 +55,20 @@ This cog can be installed through the following command:
 
 Or the development version:
 
-.. code:: sh
-
-    python3 -m pip install -U git+https://github.com/Gorialis/jishaku@master#egg=jishaku
++-------------------------------------------------------------------------------------------+
+| From GitHub:                                                                              |
+|                                                                                           |
+| .. code:: sh                                                                              |
+|                                                                                           |
+|     python3 -m pip install -U git+https://github.com/Gorialis/jishaku@master#egg=jishaku  |
+|                                                                                           |
+| From GitLab:                                                                              |
+|                                                                                           |
+| .. code:: sh                                                                              |
+|                                                                                           |
+|     python3 -m pip install -U git+https://gitlab.com/Gorialis/jishaku@master#egg=jishaku  |
+|                                                                                           |
++-------------------------------------------------------------------------------------------+
 
 It can be used in bots directly using
 

@@ -15,6 +15,7 @@ import asyncio
 import collections
 import contextlib
 import datetime
+import itertools
 import os
 import os.path
 import re
@@ -32,6 +33,7 @@ from jishaku.codeblocks import Codeblock, CodeblockConverter
 from jishaku.exception_handling import ReplResponseReactor
 from jishaku.meta import __version__
 from jishaku.models import copy_context_with
+from jishaku.modules import ExtensionConverter
 from jishaku.paginators import FilePaginator, PaginatorInterface, WrappedPaginator
 from jishaku.repl import AsyncCodeExecutor, Scope, all_inspections, get_var_dict_from_ctx
 from jishaku.shell import ShellReader
@@ -48,13 +50,15 @@ __all__ = (
     "setup"
 )
 
-HIDE_JISHAKU = os.getenv("JISHAKU_HIDE", "").lower() in ("true", "t", "yes", "y", "on", "1")
+ENABLED_SYMBOLS = ("true", "t", "yes", "y", "on", "1")
+JISHAKU_HIDE = os.getenv("JISHAKU_HIDE", "").lower() in ENABLED_SYMBOLS
+JISHAKU_RETAIN = os.getenv("JISHAKU_RETAIN", "").lower() in ENABLED_SYMBOLS
 
 
 CommandTask = collections.namedtuple("CommandTask", "index ctx task")
 
 
-class Jishaku:  # pylint: disable=too-many-public-methods
+class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
     """
     The cog that includes Jishaku's Discord-facing default functionality.
     """
@@ -64,7 +68,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self._scope = Scope()
-        self.retain = False
+        self.retain = JISHAKU_RETAIN
         self.last_result = None
         self.start_time = datetime.datetime.now()
         self.tasks = collections.deque()
@@ -106,16 +110,16 @@ class Jishaku:  # pylint: disable=too-many-public-methods
             if cmdtask in self.tasks:
                 self.tasks.remove(cmdtask)
 
-    async def __local_check(self, ctx: commands.Context):
+    async def cog_check(self, ctx: commands.Context):
         """
         Local check, makes all commands in this cog owner-only
         """
 
         if not await ctx.bot.is_owner(ctx.author):
-            raise commands.NotOwner("You must own this bot to use jishaku.")
+            raise commands.NotOwner("You must own this bot to use Jishaku.")
         return True
 
-    @commands.group(name="jishaku", aliases=["jsk"], hidden=HIDE_JISHAKU,
+    @commands.group(name="jishaku", aliases=["jsk"], hidden=JISHAKU_HIDE,
                     invoke_without_command=True, ignore_extra=False)
     async def jsk(self, ctx: commands.Context):
         """
@@ -405,7 +409,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
         return await ctx.invoke(self.jsk_shell, argument=Codeblock(argument.language, "git " + argument.content))
 
     @jsk.command(name="load", aliases=["reload"])
-    async def jsk_load(self, ctx: commands.Context, *extensions):
+    async def jsk_load(self, ctx: commands.Context, *extensions: ExtensionConverter):
         """
         Loads or reloads the given extension names.
 
@@ -414,7 +418,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
 
         paginator = commands.Paginator(prefix='', suffix='')
 
-        for extension in extensions:
+        for extension in itertools.chain(*extensions):
             load_icon = "\N{CLOCKWISE RIGHTWARDS AND LEFTWARDS OPEN CIRCLE ARROWS}" \
                         if extension in self.bot.extensions else "\N{INBOX TRAY}"
             try:
@@ -431,7 +435,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
             await ctx.send(page)
 
     @jsk.command(name="unload")
-    async def jsk_unload(self, ctx: commands.Context, *extensions):
+    async def jsk_unload(self, ctx: commands.Context, *extensions: ExtensionConverter):
         """
         Unloads the given extension names.
 
@@ -440,7 +444,7 @@ class Jishaku:  # pylint: disable=too-many-public-methods
 
         paginator = commands.Paginator(prefix='', suffix='')
 
-        for extension in extensions:
+        for extension in itertools.chain(*extensions):
             try:
                 self.bot.unload_extension(extension)
             except Exception as exc:  # pylint: disable=broad-except
@@ -618,15 +622,33 @@ class Jishaku:  # pylint: disable=too-many-public-methods
         await ctx.send(f"Playing in {voice.channel.name}.")
 
     @jsk.command(name="su")
-    async def jsk_su(self, ctx: commands.Context, member: typing.Union[discord.Member, discord.User],
-                     *, command_string: str):
+    async def jsk_su(self, ctx: commands.Context, target: discord.User, *, command_string: str):
         """
         Run a command as someone else.
 
         This will try to resolve to a Member, but will use a User if it can't find one.
         """
 
-        alt_ctx = await copy_context_with(ctx, author=member, content=ctx.prefix + command_string)
+        if ctx.guild:
+            # Try to upgrade to a Member instance
+            # This used to be done by a Union converter, but doing it like this makes
+            #  the command more compatible with chaining, e.g. `jsk in .. jsk su ..`
+            target = ctx.guild.get_member(target.id) or target
+
+        alt_ctx = await copy_context_with(ctx, author=target, content=ctx.prefix + command_string)
+
+        if alt_ctx.command is None:
+            return await ctx.send(f'Command "{alt_ctx.invoked_with}" is not found')
+
+        return await alt_ctx.command.invoke(alt_ctx)
+
+    @jsk.command(name="in")
+    async def jsk_in(self, ctx: commands.Context, channel: discord.TextChannel, *, command_string: str):
+        """
+        Run a command as if it were in a different channel.
+        """
+
+        alt_ctx = await copy_context_with(ctx, channel=channel, content=ctx.prefix + command_string)
 
         if alt_ctx.command is None:
             return await ctx.send(f'Command "{alt_ctx.invoked_with}" is not found')
