@@ -3,7 +3,7 @@ from jishaku.codeblocks import Codeblock, CodeblockConverter
 from discord.ext import commands
 import asyncio
 
-class Aliases():
+class Aliases(commands.Cog):
 
     def __init__(self, bot, jsk):
         self.bot = bot
