@@ -15,6 +15,7 @@ import asyncio
 import collections
 import contextlib
 import datetime
+import inspect
 import itertools
 import os
 import os.path
@@ -34,7 +35,7 @@ from jishaku.exception_handling import ReplResponseReactor
 from jishaku.meta import __version__
 from jishaku.models import copy_context_with
 from jishaku.modules import ExtensionConverter
-from jishaku.paginators import FilePaginator, PaginatorInterface, WrappedPaginator
+from jishaku.paginators import PaginatorInterface, WrappedFilePaginator, WrappedPaginator
 from jishaku.repl import AsyncCodeExecutor, Scope, all_inspections, get_var_dict_from_ctx
 from jishaku.shell import ShellReader
 from jishaku.voice import BasicYouTubeDLSource, connected_check, playing_check, vc_check, youtube_dl
@@ -227,7 +228,7 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
 
         try:
             with open(path, "rb") as file:
-                paginator = FilePaginator(file, line_span=line_span, max_size=1985)
+                paginator = WrappedFilePaginator(file, line_span=line_span, max_size=1985)
         except UnicodeDecodeError:
             return await ctx.send(f"`{path}`: Couldn't determine the encoding of this file.")
         except ValueError as exc:
@@ -689,6 +690,31 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
 
         end = time.perf_counter()
         return await ctx.send(f"Command `{alt_ctx.command.qualified_name}` finished in {end - start:.3f}s.")
+
+    @jsk.command(name="source", aliases=["src"])
+    async def jsk_source(self, ctx: commands.Context, *, command_name: str):
+        """
+        Displays the source code for a command.
+        """
+
+        command = self.bot.get_command(command_name)
+        if not command:
+            return await ctx.send(f"Couldn't find command `{command_name}`.")
+
+        try:
+            source_lines, _ = inspect.getsourcelines(command.callback)
+        except (TypeError, OSError):
+            return await ctx.send(f"Was unable to retrieve the source for `{command}` for some reason.")
+
+        # getsourcelines for some reason returns WITH line endings
+        source_lines = ''.join(source_lines).split('\n')
+
+        paginator = WrappedPaginator(prefix='```py', suffix='```', max_size=1985)
+        for line in source_lines:
+            paginator.add_line(line)
+
+        interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
+        await interface.send_to(ctx)
 
     @jsk.command(name="shutdown", aliases=["logout"])
     async def jsk_shutdown(self, ctx: commands.Context):
