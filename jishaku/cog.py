@@ -784,10 +784,10 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
     async def py(self, ctx, *, argument: CodeblockConverter):
         await ctx.invoke(self.jsk_python, argument = argument)
     @commands.command()
-    async def unload(self, ctx: commands.Context, *extensions):
+    async def unload(self, ctx: commands.Context, *extensions: ExtensionConverter):
         await ctx.invoke(self.jsk_unload, *extensions)
     @commands.command(aliases=["reload"])
-    async def load(self, ctx: commands.Context, *extensions):
+    async def load(self, ctx: commands.Context, *extensions: ExtensionConverter):
         await ctx.invoke(self.jsk_load, *extensions)
 
 
