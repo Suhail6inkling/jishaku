@@ -29,9 +29,9 @@ import discord
 import humanize
 from discord.ext import commands
 try:
-    from cogs.lib.checks import _check
+    from cogs.lib.checks import check
 except:
-    from lib.checks import _check
+    from lib.checks import check
 import importlib as imp
 from jishaku.codeblocks import Codeblock, CodeblockConverter
 from jishaku.exception_handling import ReplResponseReactor
@@ -118,9 +118,7 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         Local check, makes all commands in this cog owner-only
         """
 
-        if not await ctx.bot.is_owner(ctx.author):
-            raise commands.NotOwner("You must own this bot to use Jishaku.")
-        return True
+        return await check(ctx)
 
     @commands.group(name="jishaku", aliases=["jsk"], hidden=JISHAKU_HIDE,
                     invoke_without_command=True, ignore_extra=False)
