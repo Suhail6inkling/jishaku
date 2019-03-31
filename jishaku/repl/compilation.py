@@ -6,7 +6,7 @@ jishaku.repl.compilation
 
 Constants, functions and classes related to classifying, compiling and executing Python code.
 
-:copyright: (c) 2018 Devon (Gorialis) R
+:copyright: (c) 2019 Devon (Gorialis) R
 :license: MIT, see LICENSE for more details.
 
 """
@@ -14,6 +14,7 @@ Constants, functions and classes related to classifying, compiling and executing
 import ast
 import asyncio
 import inspect
+import sys
 import textwrap
 
 import import_expression
@@ -29,40 +30,49 @@ async def _repl_coroutine({{0}}):
     import discord
     from discord.ext import commands
 
-    import jishaku
+    try:
+        import jishaku
+    except ImportError:
+        jishaku = None  # keep working even if in panic recovery mode
 
     try:
+        pass
 {{1}}
     finally:
-        _async_executor = jishaku.repl.get_parent_var('async_executor', skip_frames=1)
-        if _async_executor:
-            _async_executor.scope.globals.update(locals())
+        if hasattr(jishaku, 'repl'):
+            _async_executor = jishaku.repl.get_parent_var('async_executor', skip_frames=1)
+            if _async_executor:
+                _async_executor.scope.globals.update(locals())
 """.format(import_expression.constants.IMPORTER)
 
 
-def get_wrapped_code(code: str, args: str = ''):
-    """
-    Wraps code into an async function body for REPL.
-    """
-
-    return CORO_CODE.format(args, textwrap.indent(code, ' ' * 8))
-
-
-def maybe_add_return(code: str, args: str = '') -> ast.Module:
+def wrap_code(code: str, args: str = '') -> ast.Module:
     """
     Compiles Python code into an async function or generator,
     and automatically adds return if the function body is a single evaluation.
     Also adds inline import expression support.
     """
 
-    mod = import_expression.parse(get_wrapped_code(code, args=args), mode='exec')
-    ast.increment_lineno(mod, -12)  # bring line numbers back in sync with repl
+    if sys.version_info >= (3, 7):
+        user_code = import_expression.parse(code, mode='exec')
+        injected = ''
+    else:
+        injected = code
+
+    mod = import_expression.parse(CORO_CODE.format(args, textwrap.indent(injected, ' ' * 8)), mode='exec')
 
     definition = mod.body[-1]  # async def ...:
     assert isinstance(definition, ast.AsyncFunctionDef)
 
     try_block = definition.body[-1]  # try:
     assert isinstance(try_block, ast.Try)
+
+    if sys.version_info >= (3, 7):
+        try_block.body.extend(user_code.body)
+    else:
+        ast.increment_lineno(mod, -16)  # bring line numbers back in sync with repl
+
+    ast.fix_missing_locations(mod)
 
     is_asyncgen = any(isinstance(node, ast.Yield) for node in ast.walk(try_block))
 
@@ -127,7 +137,7 @@ class AsyncCodeExecutor:  # pylint: disable=too-few-public-methods
                 self.arg_names.append(key)
                 self.args.append(value)
 
-        self.code = maybe_add_return(code, args=', '.join(self.arg_names))
+        self.code = wrap_code(code, args=', '.join(self.arg_names))
         self.scope = scope or Scope()
         self.loop = loop or asyncio.get_event_loop()
 

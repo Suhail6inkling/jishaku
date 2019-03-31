@@ -4,7 +4,7 @@
 jishaku converter test
 ~~~~~~~~~~~~~~~~~~~~~~
 
-:copyright: (c) 2018 Devon (Gorialis) R
+:copyright: (c) 2019 Devon (Gorialis) R
 :license: MIT, see LICENSE for more details.
 
 """
@@ -169,5 +169,3 @@ class PaginatorTest(unittest.TestCase):
             raised = True
 
         self.assertTrue(raised)
-
-        bot.loop.run_until_complete(bot.close())

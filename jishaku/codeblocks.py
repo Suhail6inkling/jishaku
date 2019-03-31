@@ -6,7 +6,7 @@ jishaku.codeblocks
 
 Converters for detecting and obtaining codeblock content
 
-:copyright: (c) 2018 Devon (Gorialis) R
+:copyright: (c) 2019 Devon (Gorialis) R
 :license: MIT, see LICENSE for more details.
 
 """
@@ -20,7 +20,7 @@ __all__ = ('Codeblock', 'CODEBLOCK_REGEX', 'CodeblockConverter')
 
 
 Codeblock = namedtuple('Codeblock', 'language content')
-CODEBLOCK_REGEX = re.compile("^(?:```([A-Za-z0-9\\-\\.]*)\n)?(.+?)(?:\n+```)?$", re.S)
+CODEBLOCK_REGEX = re.compile("^(?:```([A-Za-z0-9\\-\\.]*)\n)?(.+?)(?:```)?$", re.S)
 
 
 class CodeblockConverter(commands.Converter):  # pylint: disable=too-few-public-methods

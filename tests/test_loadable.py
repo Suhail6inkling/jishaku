@@ -4,7 +4,7 @@
 jishaku.cog loadability test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:copyright: (c) 2018 Devon (Gorialis) R
+:copyright: (c) 2019 Devon (Gorialis) R
 :license: MIT, see LICENSE for more details.
 
 """
@@ -26,5 +26,3 @@ class LoadabilityTest(unittest.TestCase):
 
         bot.load_extension("jishaku.cog")
         bot.unload_extension("jishaku.cog")
-
-        bot.loop.run_until_complete(bot.close())

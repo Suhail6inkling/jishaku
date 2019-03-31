@@ -19,14 +19,16 @@
 
 # -- Project information -----------------------------------------------------
 
+from jishaku.meta import __version__
+
 project = 'jishaku'
-copyright = '2018, Gorialis'
+copyright = '2019, Gorialis'
 author = 'Gorialis'
 
 # The short X.Y version
-version = '1.1.1'
+version = __version__
 # The full version, including alpha/beta/rc tags
-release = '1.1.1'
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -79,6 +81,11 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'friendly'
 
+rst_prolog = """
+.. |tasked| replace:: This command submits itself to the |taskref|_.
+.. |taskref| replace:: *task queue*
+.. _taskref: Task system
+"""
 
 # -- Options for HTML output -------------------------------------------------
 
