@@ -329,7 +329,7 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         return await alt_ctx.command.invoke(alt_ctx)
 
     @jsk.command(name="in")
-    async def jsk_in(self, ctx: commands.Context, channel: discord.TextChannel, *, command_string: str):
+    async def jsk_in(self, ctx: commands.Context, channel: typing.Union[discord.TextChannel, discord.User, discord.DMChannel], *, command_string: str):
         """
         Run a command as if it were in a different channel.
         """
