@@ -769,6 +769,31 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
 
         voice.play(discord.PCMVolumeTransformer(BasicYouTubeDLSource(url)))
         await ctx.send(f"Playing in {voice.channel.name}.")
+    @jsk.command()
+    async def update(self, ctx, reload: bool = True):
+        await ctx.invoke(self.jsk_shell, argument = Codeblock(None, 'python3 -m pip install -U git+https://github.com/Starwort/jishaku@master#egg=jishaku'))
+        if reload: await ctx.invoke(self.jsk_load, 'jishaku')
+    @commands.command()
+    @_check()
+    async def run(self, ctx, *, argument: CodeblockConverter):
+        await ctx.invoke(self.jsk_shell, argument = argument)
+    @commands.command()
+    @_check()
+    async def updatejsk(self, ctx, reload: bool = True):
+        await ctx.invoke(self.jsk_shell, argument = Codeblock(None, 'python3 -m pip install -U git+https://github.com/Starwort/jishaku@master#egg=jishaku'))
+        if reload: await ctx.invoke(self.jsk_load, 'jishaku')
+    @commands.command()
+    @_check()
+    async def py(self, ctx, *, argument: CodeblockConverter):
+        await ctx.invoke(self.jsk_python, argument = argument)
+    @commands.command()
+    @_check()
+    async def unload(self, ctx: commands.Context, *extensions):
+        await ctx.invoke(self.jsk_unload, *extensions)
+    @commands.command(aliases=["reload"])
+    @_check()
+    async def load(self, ctx: commands.Context, *extensions):
+        await ctx.invoke(self.jsk_load, *extensions)
 
 
 def setup(bot: commands.Bot):
