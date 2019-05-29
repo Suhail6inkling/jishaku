@@ -17,7 +17,12 @@ import typing
 import pkg_resources
 from discord.ext import commands
 
-__all__ = ('find_extensions_in', 'resolve_extensions', 'package_version', 'ExtensionConverter')
+__all__ = (
+    "find_extensions_in",
+    "resolve_extensions",
+    "package_version",
+    "ExtensionConverter",
+)
 
 
 def find_extensions_in(path: typing.Union[str, pathlib.Path]) -> list:
@@ -34,20 +39,20 @@ def find_extensions_in(path: typing.Union[str, pathlib.Path]) -> list:
     extension_names = []
 
     # Find extensions directly in this folder
-    for subpath in path.glob('*.py'):
-        parts = subpath.with_suffix('').parts
-        if parts[0] == '.':
+    for subpath in path.glob("*.py"):
+        parts = subpath.with_suffix("").parts
+        if parts[0] == ".":
             parts = parts[1:]
 
-        extension_names.append('.'.join(parts))
+        extension_names.append(".".join(parts))
 
     # Find extensions as subfolder modules
-    for subpath in path.glob('*/__init__.py'):
+    for subpath in path.glob("*/__init__.py"):
         parts = subpath.parent.parts
-        if parts[0] == '.':
+        if parts[0] == ".":
             parts = parts[1:]
 
-        extension_names.append('.'.join(parts))
+        extension_names.append(".".join(parts))
 
     return extension_names
 
@@ -57,8 +62,15 @@ def resolve_extensions(bot: commands.Bot, name: str) -> list:
     Tries to resolve extension queries into a list of extension names.
     """
 
-    if name.endswith('.*'):
-        module_parts = name[:-2].split('.')
+    if not name.startswith("cogs."):  # because we're lazy
+        if name == "jsk":
+            name = "jishaku"
+
+        if name != "jishaku":
+            name = "cogs." + name
+
+    if name.endswith(".*"):
+        module_parts = name[:-2].split(".")
         path = pathlib.Path(module_parts.pop(0))
 
         for part in module_parts:
@@ -66,7 +78,7 @@ def resolve_extensions(bot: commands.Bot, name: str) -> list:
 
         return find_extensions_in(path)
 
-    if name == '~':
+    if name == "~":
         return list(bot.extensions.keys())
 
     return [name]
