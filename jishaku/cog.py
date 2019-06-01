@@ -57,7 +57,7 @@ ENABLED_SYMBOLS = ("true", "t", "yes", "y", "on", "1")
 JISHAKU_HIDE = os.getenv("JISHAKU_HIDE", "").lower() in ENABLED_SYMBOLS
 JISHAKU_RETAIN = os.getenv("JISHAKU_RETAIN", "").lower() in ENABLED_SYMBOLS
 JISHAKU_NO_UNDERSCORE = os.getenv("JISHAKU_NO_UNDERSCORE", "").lower() in ENABLED_SYMBOLS
-SCOPE_PREFIX = '' if JISHAKU_NO_UNDERSCORE else '_'
+SCOPE_PREFIX = '' 
 
 
 CommandTask = collections.namedtuple("CommandTask", "index ctx task")
