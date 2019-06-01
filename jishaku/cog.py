@@ -769,4 +769,7 @@ def setup(bot: commands.Bot):
     """
     cog = Jishaku(bot=bot)
     bot.add_cog(cog)
-    bot.add_cog(cog.aliases)
+    try:
+        bot.add_cog(cog.aliases)
+    except:
+        pass
