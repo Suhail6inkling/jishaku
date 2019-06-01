@@ -10,39 +10,25 @@ jishaku.inspections test
 """
 
 import collections  # for __iadd__ test
-import unittest
 
 import discord
+import pytest
 
 from jishaku.repl.inspections import all_inspections
+from utils import run_async
 
 
-class InspectionTest(unittest.TestCase):
-    def test_object_inspection(self):
-        inspections = []
-
-        for x, y in all_inspections(4):
-            inspections.append((x, y))
-
-        inspections_2 = []
-
-        for x, y in all_inspections(discord.Client):
-            inspections_2.append((x, y))
-
-        self.assertGreaterEqual(len(inspections_2), len(inspections))
-
-        # cover subclasses
-        for _, _ in all_inspections(tuple):
-            pass
-
-        # cover cwd file locations
-        for _, _ in all_inspections(InspectionTest):
-            pass
-
-        # cover content types
-        for _, _ in all_inspections([False, 1, "2", 3.0]):
-            pass
-
-        # test inplace operators
-        for _, _ in all_inspections(collections.Counter):
-            pass
+@pytest.mark.parametrize(
+    "target",
+    [
+        4,
+        discord.Client,  # cover type subclasses
+        tuple,  # cover many-subclass truncation
+        [False, 1, "2", 3.0],  # cover content types
+        collections.Counter,  # cover inplace operators
+        run_async  # cover current-working-directory inspections
+    ]
+)
+def test_object_inspection(target):
+    for _, _ in all_inspections(target):
+        pass

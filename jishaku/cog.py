@@ -16,6 +16,7 @@ import collections
 import contextlib
 import datetime
 import inspect
+import io
 import itertools
 import os
 import os.path
@@ -25,6 +26,7 @@ import time
 import traceback
 import typing
 
+import aiohttp
 import discord
 import humanize
 from discord.ext import commands
@@ -54,6 +56,8 @@ __all__ = (
 ENABLED_SYMBOLS = ("true", "t", "yes", "y", "on", "1")
 JISHAKU_HIDE = os.getenv("JISHAKU_HIDE", "").lower() in ENABLED_SYMBOLS
 JISHAKU_RETAIN = os.getenv("JISHAKU_RETAIN", "").lower() in ENABLED_SYMBOLS
+JISHAKU_NO_UNDERSCORE = os.getenv("JISHAKU_NO_UNDERSCORE", "").lower() in ENABLED_SYMBOLS
+SCOPE_PREFIX = '' if JISHAKU_NO_UNDERSCORE else '_'
 
 
 CommandTask = collections.namedtuple("CommandTask", "index ctx task")
@@ -95,8 +99,8 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         A context-manager that submits the current task to jishaku's task list
         and removes it afterwards.
 
-        Arguments
-        ---------
+        Parameters
+        -----------
         ctx: commands.Context
             A Context object used to derive information about this command task.
         """
@@ -209,7 +213,7 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
                                f"{task.ctx.message.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC")
 
         interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
-        await interface.send_to(ctx)
+        return await interface.send_to(ctx)
 
     @jsk.command(name="cancel")
     async def jsk_cancel(self, ctx: commands.Context, *, index: int):
@@ -244,7 +248,7 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         Reports any extensions that failed to load.
         """
 
-        paginator = commands.Paginator(prefix='', suffix='')
+        paginator = WrappedPaginator(prefix='', suffix='')
 
         for extension in itertools.chain(*extensions):
             method, icon = (
@@ -276,7 +280,7 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         Reports any extensions that failed to unload.
         """
 
-        paginator = commands.Paginator(prefix='', suffix='')
+        paginator = WrappedPaginator(prefix='', suffix='')
         icon = "\N{OUTBOX TRAY}"
 
         for extension in itertools.chain(*extensions):
@@ -331,7 +335,7 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
     @jsk.command(name="in")
     async def jsk_in(self, ctx: commands.Context, channel: discord.TextChannel, *, command_string: str):
         """
-        Run a command as if it were in a different channel.
+        Run a command as if it were run in a different channel.
         """
 
         alt_ctx = await copy_context_with(ctx, channel=channel, content=ctx.prefix + command_string)
@@ -346,7 +350,7 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         """
         Run a command bypassing all checks and cooldowns.
 
-        This also bypasses permission checks so this has a high possibility of making a command raise.
+        This also bypasses permission checks so this has a high possibility of making commands raise exceptions.
         """
 
         alt_ctx = await copy_context_with(ctx, content=ctx.prefix + command_string)
@@ -362,6 +366,7 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         Runs a command multiple times in a row.
 
         This acts like the command was invoked several times manually, so it obeys cooldowns.
+        You can use this in conjunction with `jsk sudo` to bypass this.
         """
 
         with self.submit(ctx):  # allow repeats to be cancelled
@@ -440,6 +445,40 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
         await interface.send_to(ctx)
 
+    @jsk.command(name="curl")
+    async def jsk_curl(self, ctx: commands.Context, url: str):
+        """
+        Download and display a text file from the internet.
+
+        This command is similar to jsk cat, but accepts a URL.
+        """
+
+        # remove embed maskers if present
+        url = url.lstrip("<").rstrip(">")
+
+        async with ReplResponseReactor(ctx.message):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    data = await response.read()
+                    hints = (
+                        response.content_type,
+                        url
+                    )
+                    code = response.status
+
+            if not data:
+                return await ctx.send(f"HTTP response was empty (status code {code}).")
+
+            try:
+                paginator = WrappedFilePaginator(io.BytesIO(data), language_hints=hints, max_size=1985)
+            except UnicodeDecodeError:
+                return await ctx.send(f"Couldn't determine the encoding of the response. (status code {code})")
+            except ValueError as exc:
+                return await ctx.send(f"Couldn't read response (status code {code}), {exc}")
+
+            interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
+            await interface.send_to(ctx)
+
     @jsk.command(name="source", aliases=["src"])
     async def jsk_source(self, ctx: commands.Context, *, command_name: str):
         """
@@ -467,10 +506,18 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
 
     # Python evaluation/execution-related commands
     @jsk.command(name="retain")
-    async def jsk_retain(self, ctx: commands.Context, *, toggle: bool):
+    async def jsk_retain(self, ctx: commands.Context, *, toggle: bool = None):
         """
         Turn variable retention for REPL on or off.
+
+        Provide no argument for current status.
         """
+
+        if toggle is None:
+            if self.retain:
+                return await ctx.send("Variable retention is set to ON.")
+
+            return await ctx.send("Variable retention is set to OFF.")
 
         if toggle:
             if self.retain:
@@ -492,46 +539,47 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         Direct evaluation of Python code.
         """
 
-        arg_dict = get_var_dict_from_ctx(ctx)
+        arg_dict = get_var_dict_from_ctx(ctx, SCOPE_PREFIX)
+        arg_dict["_"] = self.last_result
 
         scope = self.scope
 
-        scope.clean()
-        arg_dict["_"] = self.last_result
+        try:
+            async with ReplResponseReactor(ctx.message):
+                with self.submit(ctx):
+                    async for result in AsyncCodeExecutor(argument.content, scope, arg_dict=arg_dict):
+                        if result is None:
+                            continue
 
-        async with ReplResponseReactor(ctx.message):
-            with self.submit(ctx):
-                async for result in AsyncCodeExecutor(argument.content, scope, arg_dict=arg_dict):
-                    if result is None:
-                        continue
+                        self.last_result = result
 
-                    self.last_result = result
-
-                    if isinstance(result, discord.File):
-                        await ctx.send(file=result)
-                    elif isinstance(result, discord.Embed):
-                        await ctx.send(embed=result)
-                    elif isinstance(result, PaginatorInterface):
-                        await result.send_to(ctx)
-                    else:
-                        if not isinstance(result, str):
-                            # repr all non-strings
-                            result = repr(result)
-
-                        if len(result) > 2000:
-                            # inconsistency here, results get wrapped in codeblocks when they are too large
-                            #  but don't if they're not. probably not that bad, but noting for later review
-                            paginator = WrappedPaginator(prefix='```py', suffix='```', max_size=1985)
-
-                            paginator.add_line(result)
-
-                            interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
-                            await interface.send_to(ctx)
+                        if isinstance(result, discord.File):
+                            await ctx.send(file=result)
+                        elif isinstance(result, discord.Embed):
+                            await ctx.send(embed=result)
+                        elif isinstance(result, PaginatorInterface):
+                            await result.send_to(ctx)
                         else:
-                            if result.strip() == '':
-                                result = "\u200b"
+                            if not isinstance(result, str):
+                                # repr all non-strings
+                                result = repr(result)
 
-                            await ctx.send(result.replace(self.bot.http.token, "[token omitted]"))
+                            if len(result) > 2000:
+                                # inconsistency here, results get wrapped in codeblocks when they are too large
+                                #  but don't if they're not. probably not that bad, but noting for later review
+                                paginator = WrappedPaginator(prefix='```py', suffix='```', max_size=1985)
+
+                                paginator.add_line(result)
+
+                                interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
+                                await interface.send_to(ctx)
+                            else:
+                                if result.strip() == '':
+                                    result = "\u200b"
+
+                                await ctx.send(result.replace(self.bot.http.token, "[token omitted]"))
+        finally:
+            scope.clear_intersection(arg_dict)
 
     @jsk.command(name="py_inspect", aliases=["pyi", "python_inspect", "pythoninspect"])
     async def jsk_python_inspect(self, ctx: commands.Context, *, argument: CodeblockConverter):
@@ -539,30 +587,31 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         Evaluation of Python code with inspect information.
         """
 
-        arg_dict = get_var_dict_from_ctx(ctx)
+        arg_dict = get_var_dict_from_ctx(ctx, SCOPE_PREFIX)
+        arg_dict["_"] = self.last_result
 
         scope = self.scope
 
-        scope.clean()
-        arg_dict["_"] = self.last_result
+        try:
+            async with ReplResponseReactor(ctx.message):
+                with self.submit(ctx):
+                    async for result in AsyncCodeExecutor(argument.content, scope, arg_dict=arg_dict):
+                        self.last_result = result
 
-        async with ReplResponseReactor(ctx.message):
-            with self.submit(ctx):
-                async for result in AsyncCodeExecutor(argument.content, scope, arg_dict=arg_dict):
-                    self.last_result = result
+                        header = repr(result).replace("``", "`\u200b`").replace(self.bot.http.token, "[token omitted]")
 
-                    header = repr(result).replace("``", "`\u200b`").replace(self.bot.http.token, "[token omitted]")
+                        if len(header) > 485:
+                            header = header[0:482] + "..."
 
-                    if len(header) > 485:
-                        header = header[0:482] + "..."
+                        paginator = WrappedPaginator(prefix=f"```prolog\n=== {header} ===\n", max_size=1985)
 
-                    paginator = WrappedPaginator(prefix=f"```prolog\n=== {header} ===\n", max_size=1985)
+                        for name, res in all_inspections(result):
+                            paginator.add_line(f"{name:16.16} :: {res}")
 
-                    for name, res in all_inspections(result):
-                        paginator.add_line(f"{name:16.16} :: {res}")
-
-                    interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
-                    await interface.send_to(ctx)
+                        interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
+                        await interface.send_to(ctx)
+        finally:
+            scope.clear_intersection(arg_dict)
 
     # Shell-related commands
     @jsk.command(name="shell", aliases=["sh"])
@@ -570,7 +619,8 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         """
         Executes statements in the system shell.
 
-        This uses the bash shell. Execution can be cancelled by closing the paginator.
+        This uses the system shell as defined in $SHELL, or `/bin/bash` otherwise.
+        Execution can be cancelled by closing the paginator.
         """
 
         async with ReplResponseReactor(ctx.message):

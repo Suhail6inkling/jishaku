@@ -67,7 +67,7 @@ Python execution and evaluation is facilitated by jishaku's :class:`AsyncCodeExe
 
 Code can be passed in as either a single line or a full codeblock:
 
-.. code::
+.. code:: md
 
     ?jsk py 3 + 4
 
@@ -81,7 +81,7 @@ Awaitables are returned as-is, without awaiting them.
 
 Codeblocks passed support yielding. Yielding allows results to be received during execution:
 
-.. code::
+.. code:: md
 
     ?jsk py ```py
     for x in range(5):
@@ -90,8 +90,48 @@ Codeblocks passed support yielding. Yielding allows results to be received durin
 
 Yielded results are treated the same as if they were returned.
 
+When using the ``jsk py`` command, there are a set of contextual variables you can use to interact with Discord:
+
++----------------+-----------------------------------------------------------+
+| ``_bot``       |  The :class:`discord.ext.commands.Bot` instance.          |
++----------------+-----------------------------------------------------------+
+| ``_ctx``       |  The invoking :class:`discord.ext.commands.Context`.      |
++----------------+-----------------------------------------------------------+
+| ``_message``   |  An alias for ``_ctx.message``.                           |
++----------------+                                                           |
+| ``_msg``       |                                                           |
++----------------+-----------------------------------------------------------+
+| ``_author``    |  An alias for ``_ctx.author``.                            |
++----------------+-----------------------------------------------------------+
+| ``_channel``   |  An alias for ``_ctx.channel``.                           |
++----------------+-----------------------------------------------------------+
+| ``_guild``     |  An alias for ``_ctx.guild``.                             |
++----------------+-----------------------------------------------------------+
+| ``_find``      |  A shorthand for :func:`discord.utils.find`.              |
++----------------+-----------------------------------------------------------+
+| ``_get``       |  A shorthand for :func:`discord.utils.get`.               |
++----------------+-----------------------------------------------------------+
+
+Example:
+
+.. code:: md
+
+    ?jsk py ```py
+    channel = _bot.get_channel(123456789012345678)
+
+    await channel.send(_author.avatar_url_as(format='png'))
+    ```
+
+These variables are prefixed with underscores to try and reduce accidental shadowing when writing scripts in REPL.
+
+If you don't want the underscores, you can set ``JISHAKU_NO_UNDERSCORE=true`` in your environment variables.
+
+These variables are bound to the local scope and are actively cleaned from the scope on command exit,
+so they should never persist between REPL sessions.
+
+
 Commands
-~~~~~~~~
+---------
 
 .. py:function:: jsk [python|py] <argument: str>
 
@@ -210,6 +250,26 @@ Commands
     You can use ``jsk repeat . jsk sudo ..`` to bypass cooldowns on each invoke if need be.
 
     This command will wait for a previous invocation to finish before moving onto the next one.
+
+.. py:function:: jsk cat <file: str>
+
+    Reads out the data from a file, displaying it in a :class:`PaginatorInterface`.
+
+    This command will attempt to work out the appropriate highlight.js language from the shebang (if present) or file extension,
+    and will highlight the codeblock accordingly.
+
+    If the file has an encoding hint, it will be honored when trying to read it.
+
+    It is possible to specify a linespan by typing e.g. ``jsk cat file.py#L5-10``, which will only display lines 5 through 10 inclusive.
+
+.. py:function:: jsk curl <url: str>
+
+    Downloads a file from a URL, displaying the contents in a :class:`PaginatorInterface`.
+
+    This command will attempt to work out the appropriate highlight.js language from the MIME type or URL
+    and will highlight the codeblock accordingly.
+
+    If the file has an encoding hint, it will be honored when trying to read it.
 
 .. py:function:: jsk source <command_name: str>
 

@@ -36,11 +36,21 @@ class Scope:
         self.globals: dict = globals_ or {}
         self.locals: dict = locals_ or {}
 
-    def clean(self):
+    def clear_intersection(self, other_dict):
         """
-        Clears out keys starting with an underscore.
+        Clears out locals and globals from this scope where the key-value pair matches
+        with other_dict.
 
-        This reduces cross-eval pollution by removing private variables.
+        This allows cleanup of temporary variables that may have washed up into this
+        Scope.
+
+        Parameters
+        -----------
+        other_dict: :class:`dict`
+            The dictionary to be used to determine scope clearance.
+
+            If a key from this dict matches an entry in the globals or locals of this scope,
+            and the value is identical, it is removed from the scope.
 
         Returns
         -------
@@ -48,12 +58,10 @@ class Scope:
             The updated scope (self).
         """
 
-        for key in tuple(self.globals.keys()):
-            if key.startswith('_') and not key.startswith('__'):
+        for key, value in other_dict.items():
+            if key in self.globals and self.globals[key] is value:
                 del self.globals[key]
-
-        for key in tuple(self.locals.keys()):
-            if key.startswith('_') and not key.startswith('__'):
+            if key in self.locals and self.locals[key] is value:
                 del self.locals[key]
 
         return self
@@ -62,15 +70,17 @@ class Scope:
         """
         Updates this scope with the content of another scope.
 
-        Arguments
+        Parameters
         ---------
-        other: a :class:`Scope` instance.
+        other: :class:`Scope`
+            The scope to overlay onto this one.
 
         Returns
         -------
         Scope
             The updated scope (self).
         """
+
         self.globals.update(other.globals)
         self.locals.update(other.locals)
         return self
@@ -79,9 +89,10 @@ class Scope:
         """
         Updates this scope's globals with a dict.
 
-        Arguments
-        ---------
-        other: a :class:`dict` to be merged into this scope.
+        Parameters
+        -----------
+        other: :class:`dict`
+            The dictionary to be merged into this scope.
 
         Returns
         -------
@@ -96,9 +107,10 @@ class Scope:
         """
         Updates this scope's locals with a dict.
 
-        Arguments
-        ---------
-        other: a :class:`dict` to be merged into this scope.
+        Parameters
+        -----------
+        other: :class:`dict`
+            The dictionary to be merged into this scope.
 
         Returns
         -------
