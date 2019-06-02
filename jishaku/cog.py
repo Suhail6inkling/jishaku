@@ -31,7 +31,7 @@ from discord.ext import commands
 try:
     from cogs.lib.checks import check
 except:
-    from lib.checks import dev_predicate
+    from lib.checks import dev_predicate as check
 import importlib as imp
 from jishaku.codeblocks import Codeblock, CodeblockConverter
 from jishaku.exception_handling import ReplResponseReactor
