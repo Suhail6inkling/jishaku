@@ -117,10 +117,9 @@ class Jishaku(commands.Cog):  # pylint: disable=too-many-public-methods
         """
         Local check, makes all commands in this cog owner-only
         """
-        try:
-            return await check(ctx)
-        except Exception as exc:
-            traceback.print_exc()
+        x = await check(ctx)
+        print(x)
+        return x
             
 
     @commands.group(name="jishaku", aliases=["jsk"], hidden=JISHAKU_HIDE,
